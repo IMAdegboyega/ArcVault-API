@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  address1          String?
+  city              String?
+  state             String?
+  postalCode        String?   @map("postal_code")
+  dateOfBirth       String?   @map("date_of_birth")
+  ssn               String?   // encrypted, last 4 for display
+  paymentCustomerId String?   @unique @map("payment_customer_id")
+  refreshToken      String?   @map("refresh_token")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  bankAccounts      BankAccount[]
+  sentTransfers     Transfer[] @relation("SenderTransfers")
+  receivedTransfers Transfer[] @relation("ReceiverTransfers")
+
+  @@map("users")
+}
+
+model BankAccount {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  plaidItemId           String    @map("plaid_item_id")
+  plaidAccessToken      String    @map("plaid_access_token")
+  accountId             String    @map("account_id")
+  name                  String
+  officialName          String?   @map("official_name")
+  type                  String    // depository, credit, loan, investment
+  subtype               String?   // checking, savings, credit card, etc.
+  mask                  String?   // last 4 digits
+  currentBalance        Float?    @default(0) @map("current_balance")
+  availableBalance      Float?    @default(0) @map("available_balance")
+  isoCurrencyCode       String?   @default("USD") @map("iso_currency_code")
+  shareableId           String?   @unique @map("shareable_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  sentTransfers         Transfer[] @relation("SenderAccountTransfers")
+  receivedTransfers     Transfer[] @relation("ReceiverAccountTransfers")
+
+  @@map("bank_accounts")
+}
+
+model Transaction {
+  id                  String    @id @default(uuid())
+  bankAccountId       String    @map("bank_account_id")
+  plaidTransactionId  String?   @unique @map("plaid_transaction_id")
+  name                String
+  amount              Float
+  date                DateTime
+  category            String?
+  categoryId          String?   @map("category_id")
+  channel             String?   // online, in store, other
+  pending             Boolean   @default(false)
+  merchantName        String?   @map("merchant_name")
+  paymentChannel      String?   @map("payment_channel")
+  image               String?   // merchant logo URL
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  bankAccount         BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model Transfer {
+  id                  String    @id @default(uuid())
+  senderUserId        String    @map("sender_user_id")
+  senderAccountId     String    @map("sender_account_id")
+  receiverUserId      String?   @map("receiver_user_id")
+  receiverAccountId   String?   @map("receiver_account_id")
+  amount              Float
+  description         String?
+  status              TransferStatus @default(PENDING)
+  paymentTransferId   String?   @unique @map("payment_transfer_id")
+  email               String?   // receiver email for lookup
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  senderUser          User        @relation("SenderTransfers", fields: [senderUserId], references: [id])
+  senderAccount       BankAccount @relation("SenderAccountTransfers", fields: [senderAccountId], references: [id])
+  receiverUser        User?       @relation("ReceiverTransfers", fields: [receiverUserId], references: [id])
+  receiverAccount     BankAccount? @relation("ReceiverAccountTransfers", fields: [receiverAccountId], references: [id])
+
+  @@map("transfers")
+}
+
+enum TransferStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
