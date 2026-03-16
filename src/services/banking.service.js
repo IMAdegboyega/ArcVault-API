@@ -19,11 +19,11 @@ const crypto = require('crypto');
 // ==================== Mock Data ====================
 
 const MOCK_INSTITUTIONS = [
-  { id: 'ins_chase', name: 'Chase', logo: '🏦' },
-  { id: 'ins_bofa', name: 'Bank of America', logo: '🏦' },
-  { id: 'ins_wells', name: 'Wells Fargo', logo: '🏦' },
-  { id: 'ins_citi', name: 'Citibank', logo: '🏦' },
-  { id: 'ins_capital', name: 'Capital One', logo: '🏦' },
+  { id: 'ins_chase', name: 'Chase', logo: 'chase' },
+  { id: 'ins_bofa', name: 'Bank of America', logo: 'bofa' },
+  { id: 'ins_wells', name: 'Wells Fargo', logo: 'wells' },
+  { id: 'ins_citi', name: 'Citibank', logo: 'citi' },
+  { id: 'ins_capital', name: 'Capital One', logo: 'capital' },
 ];
 
 const MOCK_MERCHANTS = [
@@ -195,7 +195,7 @@ class SimulatedBankingProvider {
         date: date.toISOString().split('T')[0],
         category: [merchant.category],
         category_id: merchant.category.toLowerCase().replace(/\s+/g, '_'),
-        payment_channel: Math.random() > 0.3 ? 'online' : 'in store',
+        payment_channel: (() => { const r = Math.random(); return r < 0.40 ? 'online' : r < 0.85 ? 'in store' : 'other'; })(),
         pending: Math.random() > 0.9,
         merchant_name: merchant.name,
         logo_url: null,
