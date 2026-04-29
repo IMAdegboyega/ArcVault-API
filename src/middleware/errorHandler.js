@@ -4,13 +4,14 @@ const { AppError } = require('../utils/errors');
  * Global error handler - catches all errors thrown in route handlers
  */
 const errorHandler = (err, req, res, next) => {
-  // Log error in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', {
-      message: err.message,
-      stack: err.stack,
-      code: err.code,
-    });
+  // Log error in development (loud + full stack so 500s are debuggable)
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('\n========== Unhandled error on', req.method, req.originalUrl, '==========');
+    console.error('name:   ', err.name);
+    console.error('code:   ', err.code);
+    console.error('message:', err.message);
+    if (err.stack) console.error(err.stack);
+    console.error('==========================================================\n');
   }
 
   // Operational errors (our custom errors)
@@ -41,6 +42,29 @@ const errorHandler = (err, req, res, next) => {
       error: {
         code: 'NOT_FOUND',
         message: 'Record not found',
+      },
+    });
+  }
+
+  // Table or column missing from DB — almost always means migrations haven't run
+  if (err.code === 'P2021' || err.code === 'P2022') {
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SCHEMA_OUT_OF_SYNC',
+        message:
+          'Database schema is out of sync. Run `npm run db:push` (or `npm run db:migrate`) in the backend, then `npm run db:seed` if you want test users.',
+      },
+    });
+  }
+
+  // Can't reach the database
+  if (err.code === 'P1001' || err.code === 'P1002') {
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: 'DB_UNREACHABLE',
+        message: 'Database is unreachable. Check DATABASE_URL in backend/.env.',
       },
     });
   }

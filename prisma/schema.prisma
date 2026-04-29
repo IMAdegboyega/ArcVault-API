@@ -82,7 +82,10 @@ model Transaction {
 model Transfer {
   id                  String    @id @default(uuid())
   senderUserId        String    @map("sender_user_id")
-  senderAccountId     String    @map("sender_account_id")
+  // Nullable so a bank disconnect doesn't destroy transfer history — the
+  // account pointer becomes null but the row (amount, description, status,
+  // timestamps) is preserved.
+  senderAccountId     String?   @map("sender_account_id")
   receiverUserId      String?   @map("receiver_user_id")
   receiverAccountId   String?   @map("receiver_account_id")
   amount              Float
@@ -93,10 +96,10 @@ model Transfer {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  senderUser          User        @relation("SenderTransfers", fields: [senderUserId], references: [id])
-  senderAccount       BankAccount @relation("SenderAccountTransfers", fields: [senderAccountId], references: [id])
-  receiverUser        User?       @relation("ReceiverTransfers", fields: [receiverUserId], references: [id])
-  receiverAccount     BankAccount? @relation("ReceiverAccountTransfers", fields: [receiverAccountId], references: [id])
+  senderUser          User         @relation("SenderTransfers", fields: [senderUserId], references: [id])
+  senderAccount       BankAccount? @relation("SenderAccountTransfers", fields: [senderAccountId], references: [id], onDelete: SetNull)
+  receiverUser        User?        @relation("ReceiverTransfers", fields: [receiverUserId], references: [id])
+  receiverAccount     BankAccount? @relation("ReceiverAccountTransfers", fields: [receiverAccountId], references: [id], onDelete: SetNull)
 
   @@map("transfers")
 }

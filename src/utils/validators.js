@@ -17,7 +17,8 @@ const registerSchema = z.object({
   state: z.string().max(2).optional(),
   postalCode: z.string().optional(),
   dateOfBirth: z.string().optional(), // YYYY-MM-DD
-  ssn: z.string().min(4).max(11).optional(),
+  // Accept any reasonable length — only the last 4 digits are persisted.
+  ssn: z.string().min(4, 'SSN must be at least 4 digits').max(20).optional(),
 });
 
 const loginSchema = z.object({

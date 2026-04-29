@@ -230,8 +230,7 @@ class SimulatedBankingProvider {
   // ==================== Internal Helpers ====================
 
   _generateAccounts(institution) {
-    const checkingBalance = 5000 + Math.random() * 20000;
-    const savingsBalance = 10000 + Math.random() * 50000;
+    const balance = 5000 + Math.random() * 20000;
 
     return [
       {
@@ -242,21 +241,8 @@ class SimulatedBankingProvider {
         subtype: 'checking',
         mask: String(Math.floor(1000 + Math.random() * 9000)),
         balances: {
-          current: Math.round(checkingBalance * 100) / 100,
-          available: Math.round((checkingBalance - Math.random() * 500) * 100) / 100,
-          iso_currency_code: 'USD',
-        },
-      },
-      {
-        account_id: `acc-${crypto.randomBytes(8).toString('hex')}`,
-        name: `${institution.name} Savings`,
-        official_name: `${institution.name} Premium Savings`,
-        type: 'depository',
-        subtype: 'savings',
-        mask: String(Math.floor(1000 + Math.random() * 9000)),
-        balances: {
-          current: Math.round(savingsBalance * 100) / 100,
-          available: Math.round(savingsBalance * 100) / 100,
+          current: Math.round(balance * 100) / 100,
+          available: Math.round((balance - Math.random() * 500) * 100) / 100,
           iso_currency_code: 'USD',
         },
       },

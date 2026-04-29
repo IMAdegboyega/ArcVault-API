@@ -50,10 +50,11 @@ const rateLimit = ({ windowMs = 15 * 60 * 1000, max = 100, message = 'Too many r
   };
 };
 
-// Strict limiter for auth routes
+// Strict limiter for auth routes — relaxed in development so local testing
+// isn't locked out after 10 attempts.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 100,
   message: 'Too many authentication attempts, please try again later',
 });
 
